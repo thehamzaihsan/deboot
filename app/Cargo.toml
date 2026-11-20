@@ -1,0 +1,19 @@
+[package]
+name = "deboot-app"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "deboot"
+path = "src/main.rs"
+
+[dependencies]
+deboot-core = { path = "../core" }
+slint = "1.8"
+anyhow = "1"
+
+[build-dependencies]
+slint-build = "1.8"
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+embed-manifest = "1"

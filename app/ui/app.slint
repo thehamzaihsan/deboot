@@ -1,0 +1,135 @@
+import { Button, ComboBox, LineEdit, ScrollView } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { DriveRow, DriveItem } from "drive-row.slint";
+import { ConfirmDialog } from "confirm-dialog.slint";
+
+export { DriveItem }
+
+export component AppWindow inherits Window {
+    title: "deboot";
+    preferred-width: 680px;
+    preferred-height: 580px;
+    background: Theme.bg;
+
+    in-out property<[DriveItem]> drives;
+    in property<int> selected-count;
+    in property<bool> job-running;
+    in-out property<string> volume-label: "USB";
+    in-out property<bool> show-confirm: false;
+    in-out property<string> confirm-text;
+
+    callback refresh-requested();
+    callback drive-toggled(string);
+    callback format-requested();
+
+    Rectangle {
+        VerticalLayout {
+            padding: 18px;
+            spacing: Theme.gap;
+
+            HorizontalLayout {
+                spacing: Theme.gap;
+
+                Text {
+                    text: "deboot";
+                    color: Theme.text;
+                    font-size: 22px;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+
+                Rectangle { horizontal-stretch: 1; }
+
+                Button {
+                    text: "⟳ Refresh";
+                    enabled: !job-running;
+                    clicked => { refresh-requested(); }
+                }
+            }
+
+            Text {
+                text: drives.length == 0
+                    ? "No removable USB drives detected. Plug one in and refresh."
+                    : "Select the drives you want to erase and reformat.";
+                color: Theme.text-dim;
+                font-size: 13px;
+                wrap: word-wrap;
+            }
+
+            ScrollView {
+                vertical-stretch: 1;
+
+                VerticalLayout {
+                    spacing: 10px;
+
+                    for d in drives: DriveRow {
+                        item: d;
+                        job-running: job-running;
+                        toggled => { drive-toggled(d.id); }
+                    }
+                }
+            }
+
+            Rectangle {
+                background: Theme.surface;
+                border-radius: Theme.radius;
+                border-width: 1px;
+                border-color: Theme.border;
+                height: 72px;
+
+                HorizontalLayout {
+                    padding: 14px;
+                    spacing: Theme.gap;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+
+                        Text { text: "Filesystem"; color: Theme.text-dim; font-size: 11px; }
+                        ComboBox {
+                            model: ["FAT32"];
+                            current-value: "FAT32";
+                            enabled: false;
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+                        width: 160px;
+
+                        Text { text: "Volume label"; color: Theme.text-dim; font-size: 11px; }
+                        LineEdit {
+                            text <=> volume-label;
+                            enabled: !job-running;
+                        }
+                    }
+
+                    Rectangle { horizontal-stretch: 1; }
+
+                    Button {
+                        text: job-running ? "Working…" : "Format Selected (" + selected-count + ")";
+                        primary: true;
+                        enabled: selected-count > 0 && !job-running;
+                        clicked => { show-confirm = true; }
+                    }
+                }
+            }
+        }
+
+        if show-confirm: ConfirmDialog {
+            width: root.width;
+            height: root.height;
+            drives: drives;
+            confirm-text <=> confirm-text;
+            confirm => {
+                show-confirm = false;
+                format-requested();
+            }
+            cancel => {
+                show-confirm = false;
+                confirm-text = "";
+            }
+        }
+    }
+}

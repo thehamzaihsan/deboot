@@ -1,0 +1,91 @@
+import { Button, LineEdit } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { DriveItem } from "drive-row.slint";
+
+export component ConfirmDialog inherits Rectangle {
+    in property<[DriveItem]> drives;
+    in-out property<string> confirm-text;
+
+    callback confirm();
+    callback cancel();
+
+    background: #000000aa;
+
+    Rectangle {
+        width: 440px;
+        height: 360px;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        background: Theme.surface;
+        border-radius: Theme.radius;
+        border-width: 1px;
+        border-color: Theme.danger;
+        drop-shadow-blur: 24px;
+        drop-shadow-color: #000000a0;
+
+        VerticalLayout {
+            padding: 20px;
+            spacing: 12px;
+
+            Text {
+                text: "⚠ This permanently erases data";
+                color: Theme.danger;
+                font-size: 17px;
+                font-weight: 700;
+            }
+
+            Text {
+                text: "The following drives will be wiped and reformatted to FAT32:";
+                color: Theme.text;
+                font-size: 13px;
+                wrap: word-wrap;
+            }
+
+            Rectangle {
+                background: Theme.danger-dim;
+                border-radius: 6px;
+                vertical-stretch: 1;
+
+                VerticalLayout {
+                    padding: 10px;
+                    spacing: 4px;
+                    alignment: start;
+
+                    for d in drives: Rectangle {
+                        if d.selected: Text {
+                            text: "•  " + d.name + "   (" + d.size-text + ")";
+                            color: Theme.text;
+                            font-size: 12px;
+                        }
+                    }
+                }
+            }
+
+            Text {
+                text: "Type WIPE to confirm:";
+                color: Theme.text-dim;
+                font-size: 12px;
+            }
+
+            LineEdit {
+                text <=> confirm-text;
+                placeholder-text: "WIPE";
+            }
+
+            HorizontalLayout {
+                spacing: Theme.gap;
+
+                Button {
+                    text: "Cancel";
+                    clicked => { cancel(); }
+                }
+                Button {
+                    text: "Erase Drives";
+                    primary: true;
+                    enabled: confirm-text == "WIPE";
+                    clicked => { confirm(); }
+                }
+            }
+        }
+    }
+}
